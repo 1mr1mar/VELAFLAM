@@ -5,8 +5,6 @@ import { ProductCard } from "./product-card"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-
 interface Product {
   id: string
   name: string
@@ -26,17 +24,13 @@ export function NewArrivals() {
 
   const fetchNewArrivals = async () => {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_new_arrival", true)
-        .gt("stock_quantity", 0)
-        .order("created_at", { ascending: false })
-        .limit(4)
-
-      if (error) throw error
-
-      setProducts(data || [])
+      const response = await fetch("/api/products?new_arrivals=true&limit=4")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
+      setProducts(data.products || [])
     } catch (error) {
       console.error("Error fetching new arrivals:", error)
     } finally {
