@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get("product_id")
+    const limit = searchParams.get("limit")
 
     let query = supabase
       .from("reviews")
@@ -23,10 +24,15 @@ export async function GET(request: Request) {
         *,
         products (name, image_url)
       `)
+      .eq("is_approved", true)
       .order("created_at", { ascending: false })
 
     if (productId) {
       query = query.eq("product_id", productId)
+    }
+
+    if (limit) {
+      query = query.limit(parseInt(limit))
     }
 
     const { data: reviews, error } = await query
@@ -70,7 +76,7 @@ export async function POST(request: Request) {
         customer_email,
         rating: Number.parseInt(rating),
         comment: comment || "",
-        approved: false,
+        is_approved: true,
       })
       .select()
       .single()

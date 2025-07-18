@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     const category = searchParams.get("category")
     const featured = searchParams.get("featured")
     const newArrivals = searchParams.get("new_arrivals")
+    const limit = searchParams.get("limit")
 
     let query = supabase.from("products").select("*")
 
@@ -26,11 +27,15 @@ export async function GET(request: Request) {
     }
 
     if (featured === "true") {
-      query = query.eq("featured", true)
+      query = query.eq("is_featured", true)
     }
 
     if (newArrivals === "true") {
-      query = query.eq("new_arrival", true)
+      query = query.eq("is_new_arrival", true)
+    }
+
+    if (limit) {
+      query = query.limit(parseInt(limit))
     }
 
     const { data: products, error } = await query
@@ -74,8 +79,8 @@ export async function POST(request: Request) {
         price: Number.parseFloat(price),
         category,
         image_url: image_url || "/placeholder.svg?height=300&width=300",
-        featured: featured || false,
-        new_arrival: new_arrival || false,
+        is_featured: featured || false,
+        is_new_arrival: new_arrival || false,
       })
       .select()
       .single()

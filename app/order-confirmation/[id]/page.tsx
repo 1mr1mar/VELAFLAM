@@ -43,7 +43,7 @@ export default function OrderConfirmationPage() {
       const response = await fetch(`/api/orders/${id}`)
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
-      setOrder(data)
+      setOrder(data.order)
     } catch (error) {
       console.error("Error fetching order:", error)
     } finally {

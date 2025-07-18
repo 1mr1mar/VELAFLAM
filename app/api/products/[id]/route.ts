@@ -51,8 +51,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         price: Number.parseFloat(price),
         category,
         image_url,
-        featured,
-        new_arrival,
+        is_featured: featured,
+        is_new_arrival: new_arrival,
       })
       .eq("id", params.id)
       .select()

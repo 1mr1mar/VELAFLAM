@@ -1,30 +1,111 @@
-# Github access issue
+# VELAFLAME - E-commerce Platform
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A modern e-commerce platform built with Next.js, featuring a beautiful UI and comprehensive functionality for selling flame-themed products.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/marwan-ganbours-projects/v0-github-access-issue)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/WTZx3DbDXrf)
+## Features
 
-## Overview
+- 🛍️ **Product Catalog** - Browse and search products with filtering and sorting
+- 🛒 **Shopping Cart** - Add items to cart and manage quantities
+- 💳 **Checkout System** - Complete orders with shipping information
+- ⭐ **Product Reviews** - Customer reviews and ratings system
+- 📱 **Responsive Design** - Works perfectly on all devices
+- 🎨 **Modern UI** - Beautiful, accessible interface built with shadcn/ui
+- 🔐 **Admin Panel** - Manage products, orders, and customers
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Deployment**: Vercel
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- pnpm (recommended) or npm
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd VELAFLAME
+```
+
+2. Install dependencies:
+```bash
+pnpm install
+```
+
+3. Set up environment variables:
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+4. Set up the database:
+Run the SQL scripts in the `scripts/` directory in your Supabase SQL editor:
+- `01-create-tables.sql`
+- `02-seed-data.sql`
+- `03-add-functions.sql`
+- `04-add-reviews.sql`
+
+5. Start the development server:
+```bash
+pnpm dev
+```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```
+VELAFLAME/
+├── app/                    # Next.js App Router pages
+│   ├── admin/             # Admin panel pages
+│   ├── api/               # API routes
+│   ├── cart/              # Shopping cart
+│   ├── checkout/          # Checkout process
+│   └── shop/              # Product catalog
+├── components/            # Reusable UI components
+│   ├── ui/               # shadcn/ui components
+│   └── ...               # Custom components
+├── contexts/             # React contexts
+├── lib/                  # Utility functions and configurations
+├── scripts/              # Database setup scripts
+└── public/               # Static assets
+```
+
+## API Routes
+
+- `GET /api/products` - Fetch products with filtering
+- `POST /api/products` - Create new product (admin)
+- `GET /api/reviews` - Fetch product reviews
+- `POST /api/reviews` - Submit new review
+- `GET /api/orders` - Fetch orders (admin)
+- `POST /api/orders` - Create new order
+- `GET /api/orders/[id]` - Fetch specific order
 
 ## Deployment
 
-Your project is live at:
+The project is configured for deployment on Vercel. Simply connect your repository to Vercel and it will automatically deploy.
 
-**[https://vercel.com/marwan-ganbours-projects/v0-github-access-issue](https://vercel.com/marwan-ganbours-projects/v0-github-access-issue)**
+## Contributing
 
-## Build your app
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-Continue building your app on:
+## License
 
-**[https://v0.dev/chat/projects/WTZx3DbDXrf](https://v0.dev/chat/projects/WTZx3DbDXrf)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+This project is licensed under the MIT License.

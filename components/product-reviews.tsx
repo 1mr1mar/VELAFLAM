@@ -27,7 +27,9 @@ interface ProductReviewsProps {
 
 export function ProductReviews({ productId, productName }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([])
+  const [allReviews, setAllReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -45,10 +47,17 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch(`/api/reviews?productId=${productId}&limit=3`)
-      if (!response.ok) throw new Error("Failed to fetch")
-      const data = await response.json()
-      setReviews(data || [])
+      // Fetch limited reviews (3)
+      const limitedResponse = await fetch(`/api/reviews?product_id=${productId}&limit=3`)
+      if (!limitedResponse.ok) throw new Error("Failed to fetch limited reviews")
+      const limitedData = await limitedResponse.json()
+      setReviews(limitedData.reviews || [])
+
+      // Fetch all reviews
+      const allResponse = await fetch(`/api/reviews?product_id=${productId}`)
+      if (!allResponse.ok) throw new Error("Failed to fetch all reviews")
+      const allData = await allResponse.json()
+      setAllReviews(allData.reviews || [])
     } catch (error) {
       console.error("Error fetching reviews:", error)
     } finally {
@@ -75,8 +84,12 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId,
-          ...formData,
+          product_id: productId,
+          customer_name: formData.customerName,
+          customer_email: formData.customerEmail,
+          rating: formData.rating,
+          title: formData.title,
+          comment: formData.comment,
         }),
       })
 
@@ -142,7 +155,17 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-bold text-gray-900">Customer Reviews</h3>
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">Customer Reviews</h3>
+          {allReviews.length > 0 && (
+            <p className="text-gray-600 mt-1">
+              {allReviews.length} review{allReviews.length !== 1 ? 's' : ''} • 
+              Average rating: {(
+                allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length
+              ).toFixed(1)}/5
+            </p>
+          )}
+        </div>
         <Button
           onClick={() => setShowReviewForm(!showReviewForm)}
           className="bg-primary-500 hover:bg-primary-600 text-white"
@@ -230,14 +253,14 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {reviews.length === 0 ? (
+        {(showAllReviews ? allReviews : reviews).length === 0 ? (
           <Card className="shadow-md">
             <CardContent className="p-8 text-center">
               <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
             </CardContent>
           </Card>
         ) : (
-          reviews.map((review) => (
+          (showAllReviews ? allReviews : reviews).map((review) => (
             <Card key={review.id} className="shadow-md hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -267,10 +290,14 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
         )}
       </div>
 
-      {reviews.length > 0 && (
+      {reviews.length > 0 && allReviews.length > 3 && (
         <div className="text-center">
-          <Button variant="outline" className="border-primary-500 text-primary-500 hover:bg-primary-50 bg-transparent">
-            View All Reviews
+          <Button 
+            variant="outline" 
+            className="border-primary-500 text-primary-500 hover:bg-primary-50 bg-transparent"
+            onClick={() => setShowAllReviews(!showAllReviews)}
+          >
+            {showAllReviews ? "Show Less" : `View All ${allReviews.length} Reviews`}
           </Button>
         </div>
       )}

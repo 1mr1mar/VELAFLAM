@@ -40,10 +40,10 @@ export default function ShopPage() {
       if (!response.ok) throw new Error("Failed to fetch")
       const data = await response.json()
 
-      setProducts(data || [])
+      setProducts(data.products || [])
 
       // Extract unique categories
-      const uniqueCategories = [...new Set(data?.map((p: Product) => p.category) || [])]
+      const uniqueCategories = [...new Set(data.products?.map((p: Product) => p.category) || [])]
       setCategories(uniqueCategories)
     } catch (error) {
       console.error("Error fetching products:", error)

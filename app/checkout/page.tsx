@@ -64,7 +64,7 @@ export default function CheckoutPage() {
         description: "You will receive a confirmation email shortly.",
       })
 
-      router.push(`/order-confirmation/${result.orderId}`)
+      router.push(`/order-confirmation/${result.order.id}`)
     } catch (error) {
       console.error("Error placing order:", error)
       toast({

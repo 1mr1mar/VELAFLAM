@@ -10,7 +10,6 @@ import { Heart, ShoppingCart, Star, Minus, Plus, ArrowLeft } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { useWishlist } from "@/contexts/wishlist-context"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
 import { ProductReviews } from "@/components/product-reviews"
 import Link from "next/link"
 
@@ -43,10 +42,10 @@ export default function ProductDetailPage() {
 
   const fetchProduct = async (id: string) => {
     try {
-      const { data, error } = await supabase.from("products").select("*").eq("id", id).single()
-
-      if (error) throw error
-      setProduct(data)
+      const response = await fetch(`/api/products/${id}`)
+      if (!response.ok) throw new Error("Failed to fetch product")
+      const data = await response.json()
+      setProduct(data.product)
     } catch (error) {
       console.error("Error fetching product:", error)
     } finally {
