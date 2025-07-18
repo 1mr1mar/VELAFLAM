@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createServerClient } from "@/lib/supabase"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     // Check if Supabase is configured
+    const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {
@@ -31,6 +32,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     // Check if Supabase is configured
+    const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {
@@ -73,6 +75,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     // Check if Supabase is configured
+    const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {

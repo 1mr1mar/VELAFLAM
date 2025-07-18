@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createServerClient } from "@/lib/supabase"
 
 export async function GET() {
   try {
     // Check if Supabase is configured
+    const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {
@@ -40,6 +41,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // Check if Supabase is configured
+    const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {
