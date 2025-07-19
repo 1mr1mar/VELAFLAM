@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Heart, ShoppingCart, Star, Minus, Plus, ArrowLeft } from "lucide-react"
+import { Heart, ShoppingCart, Star, Minus, Plus, ArrowLeft, AlertCircle } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { useWishlist } from "@/contexts/wishlist-context"
 import { useToast } from "@/hooks/use-toast"
@@ -25,8 +25,10 @@ interface Product {
 
 export default function ProductDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const { dispatch: cartDispatch } = useCart()
   const { dispatch: wishlistDispatch, state: wishlistState } = useWishlist()
@@ -37,17 +39,39 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (params.id) {
       fetchProduct(params.id as string)
+    } else {
+      setError("No product ID provided")
+      setLoading(false)
     }
   }, [params.id])
 
   const fetchProduct = async (id: string) => {
     try {
+      setLoading(true)
+      setError(null)
+      
       const response = await fetch(`/api/products/${id}`)
-      if (!response.ok) throw new Error("Failed to fetch product")
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Product not found")
+        } else if (response.status === 503) {
+          throw new Error("Database not configured. Please check your environment variables.")
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+      }
+      
       const data = await response.json()
+      
+      if (!data.product) {
+        throw new Error("Product not found")
+      }
+      
       setProduct(data.product)
     } catch (error) {
       console.error("Error fetching product:", error)
+      setError(error instanceof Error ? error.message : "Failed to load product")
     } finally {
       setLoading(false)
     }
@@ -111,15 +135,45 @@ export default function ProductDetailPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-2xl mx-auto">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-red-800 mb-4">Error Loading Product</h1>
+              <p className="text-red-700 mb-6">{error}</p>
+              
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Try Again
+                </Button>
+                <Button asChild variant="outline" className="ml-4">
+                  <Link href="/shop">Back to Shop</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Product not found</h1>
-          <p className="text-gray-600 mb-8">The product you're looking for doesn't exist.</p>
-          <Button asChild className="bg-primary-500 hover:bg-primary-600">
-            <Link href="/shop">Back to Shop</Link>
-          </Button>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Product not found</h1>
+            <p className="text-gray-600 mb-8">The product you're looking for doesn't exist.</p>
+            <Button asChild className="bg-primary-500 hover:bg-primary-600">
+              <Link href="/shop">Back to Shop</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -199,9 +253,7 @@ export default function ProductDetailPage() {
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-16 text-center font-semibold text-lg bg-primary-50 py-2 rounded-lg">
-                      {quantity}
-                    </span>
+                    <span className="text-lg font-semibold min-w-[3rem] text-center">{quantity}</span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -217,7 +269,8 @@ export default function ProductDetailPage() {
                 <div className="flex space-x-4">
                   <Button
                     onClick={handleAddToCart}
-                    className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="flex-1 bg-primary-500 hover:bg-primary-600 text-white"
+                    size="lg"
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add to Cart
@@ -225,10 +278,10 @@ export default function ProductDetailPage() {
                   <Button
                     variant="outline"
                     onClick={handleToggleWishlist}
-                    className={`px-6 py-3 border-2 transition-all duration-300 ${
+                    className={`p-3 ${
                       isInWishlist
-                        ? "text-primary-500 border-primary-500 bg-primary-50 hover:bg-primary-100"
-                        : "text-gray-600 border-gray-300 hover:border-primary-500 hover:text-primary-500"
+                        ? "text-primary-600 border-primary-600 bg-primary-50"
+                        : "border-gray-300 hover:border-primary-500"
                     }`}
                   >
                     <Heart className={`h-5 w-5 ${isInWishlist ? "fill-current" : ""}`} />
@@ -236,39 +289,11 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
-
-            <Card className="shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 text-primary-700">Product Features</h3>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center">
-                    <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    Premium quality materials
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    Safe for indoor use
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    Easy to maintain
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    1-year warranty included
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    Free shipping on orders over $50
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
         {/* Reviews Section */}
-        <div className="bg-white rounded-2xl p-8 shadow-lg">
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <ProductReviews productId={product.id} productName={product.name} />
         </div>
       </div>
