@@ -63,7 +63,7 @@ export default function ProductDetailPage() {
       }
       
       const data = await response.json()
-      
+
       if (!data.product) {
         throw new Error("Product not found")
       }
@@ -166,13 +166,13 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Product not found</h1>
-            <p className="text-gray-600 mb-8">The product you're looking for doesn't exist.</p>
-            <Button asChild className="bg-primary-500 hover:bg-primary-600">
-              <Link href="/shop">Back to Shop</Link>
-            </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Product not found</h1>
+          <p className="text-gray-600 mb-8">The product you're looking for doesn't exist.</p>
+          <Button asChild className="bg-primary-500 hover:bg-primary-600">
+            <Link href="/shop">Back to Shop</Link>
+          </Button>
           </div>
         </div>
       </div>

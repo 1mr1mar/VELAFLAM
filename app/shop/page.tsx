@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Pagination } from "@/components/ui/pagination"
 import { Search, Filter } from "lucide-react"
 
 interface Product {
@@ -25,6 +26,8 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("name")
   const [categories, setCategories] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const productsPerPage = 6
 
   useEffect(() => {
     fetchProducts()
@@ -32,6 +35,7 @@ export default function ShopPage() {
 
   useEffect(() => {
     filterAndSortProducts()
+    setCurrentPage(1) // Reset to first page when filters change
   }, [products, searchTerm, selectedCategory, sortBy])
 
   const fetchProducts = async () => {
@@ -43,7 +47,7 @@ export default function ShopPage() {
       setProducts(data.products || [])
 
       // Extract unique categories
-      const uniqueCategories = [...new Set(data.products?.map((p: Product) => p.category) || [])]
+      const uniqueCategories = [...new Set(data.products?.map((p: Product) => p.category) || [])] as string[]
       setCategories(uniqueCategories)
     } catch (error) {
       console.error("Error fetching products:", error)
@@ -84,6 +88,17 @@ export default function ShopPage() {
     })
 
     setFilteredProducts(filtered)
+  }
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
+  const startIndex = (currentPage - 1) * productsPerPage
+  const endIndex = startIndex + productsPerPage
+  const currentProducts = filteredProducts.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (loading) {
@@ -164,11 +179,28 @@ export default function ShopPage() {
           <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          {/* Results count */}
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+            </p>
+          </div>
+
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {currentProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
     </div>
   )

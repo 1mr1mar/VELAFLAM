@@ -84,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             width={400}
             height={400}
-            className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-48 sm:h-64 object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
 
@@ -113,9 +113,9 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-full">
+          <span className="text-xs sm:text-sm text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-full">
             {product.category}
           </span>
           <div className="flex items-center space-x-1">
@@ -126,16 +126,16 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 hover:text-primary-500 transition-colors line-clamp-1">
+          <h3 className="font-semibold text-gray-900 mb-2 hover:text-primary-500 transition-colors line-clamp-1 text-sm sm:text-base">
             {product.name}
           </h3>
         </Link>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+        <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-2">{product.description}</p>
 
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary-500">${product.price.toFixed(2)}</span>
-          <Button onClick={handleAddToCart} size="sm" className="bg-primary-500 hover:bg-primary-600 text-white">
+          <span className="text-lg sm:text-xl font-bold text-primary-500">${product.price.toFixed(2)}</span>
+          <Button onClick={handleAddToCart} size="sm" className="bg-primary-500 hover:bg-primary-600 text-white text-xs sm:text-sm">
             Add to Cart
           </Button>
         </div>
