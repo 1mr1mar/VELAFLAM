@@ -11,9 +11,7 @@ const nextConfig = {
   },
   // Ensure proper handling of dynamic routes
   trailingSlash: false,
-  // Enable static generation where possible
-  output: 'standalone',
-  // Ensure proper routing
+  // Ensure proper routing for Vercel
   experimental: {
     appDir: true,
   },
