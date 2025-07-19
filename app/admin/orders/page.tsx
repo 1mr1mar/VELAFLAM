@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, Eye, Package, Truck, CheckCircle, Clock } from "lucide-react"
-import { supabase } from "@/lib/supabase"
 
 interface Order {
   id: string
@@ -47,25 +46,10 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          order_items (
-            id,
-            quantity,
-            price,
-            products (
-              name,
-              image_url
-            )
-          )
-        `)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
-      setOrders(data || [])
+      const response = await fetch("/api/orders")
+      if (!response.ok) throw new Error("Failed to fetch orders")
+      const data = await response.json()
+      setOrders(data.orders || [])
     } catch (error) {
       console.error("Error fetching orders:", error)
     } finally {
@@ -96,9 +80,15 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error("Failed to update order status")
 
       fetchOrders() // Refresh the list
     } catch (error) {

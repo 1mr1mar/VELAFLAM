@@ -18,10 +18,24 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const { data: order, error } = await supabase
       .from("orders")
       .select(`
-        *,
+        id,
+        guest_name,
+        guest_email,
+        guest_phone,
+        shipping_address,
+        total_amount,
+        status,
+        payment_method,
+        created_at,
         order_items (
-          *,
-          products (*)
+          id,
+          quantity,
+          price,
+          products (
+            id,
+            name,
+            image_url
+          )
         )
       `)
       .eq("id", params.id)

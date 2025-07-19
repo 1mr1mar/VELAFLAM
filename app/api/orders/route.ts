@@ -18,10 +18,24 @@ export async function GET() {
     const { data: orders, error } = await supabase
       .from("orders")
       .select(`
-        *,
+        id,
+        guest_name,
+        guest_email,
+        guest_phone,
+        shipping_address,
+        total_amount,
+        status,
+        payment_method,
+        created_at,
         order_items (
-          *,
-          products (*)
+          id,
+          quantity,
+          price,
+          products (
+            id,
+            name,
+            image_url
+          )
         )
       `)
       .order("created_at", { ascending: false })
@@ -52,22 +66,37 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { customer_name, customer_email, customer_phone, shipping_address, items, total } = body
+    const { customerInfo, items, total } = body
 
-    if (!customer_name || !customer_email || !items || items.length === 0) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    // Validate required fields
+    if (!customerInfo || !items || items.length === 0) {
+      return NextResponse.json({ 
+        error: "Missing required fields: customerInfo, items" 
+      }, { status: 400 })
     }
+
+    const { fullName, email, phone, address, city, postalCode, notes } = customerInfo
+
+    if (!fullName || !email || !phone || !address || !city || !postalCode) {
+      return NextResponse.json({ 
+        error: "Missing required customer information" 
+      }, { status: 400 })
+    }
+
+    // Create shipping address string
+    const shippingAddress = `${address}, ${city}, ${postalCode}`
 
     // Create order
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
-        customer_name,
-        customer_email,
-        customer_phone,
-        shipping_address,
-        total: Number.parseFloat(total),
+        guest_name: fullName,
+        guest_email: email,
+        guest_phone: phone,
+        shipping_address: shippingAddress,
+        total_amount: Number.parseFloat(total),
         status: "pending",
+        payment_method: "cash_on_delivery",
       })
       .select()
       .single()
@@ -77,10 +106,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
     }
 
-    // Create order items
+    // Create order items - map cart items to order items
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
-      product_id: item.product_id,
+      product_id: item.id, // Cart items use 'id' as product_id
       quantity: item.quantity,
       price: Number.parseFloat(item.price),
     }))

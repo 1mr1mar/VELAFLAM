@@ -52,7 +52,10 @@ export default function CheckoutPage() {
         }),
       })
 
-      if (!response.ok) throw new Error("Failed to create order")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
 
       const result = await response.json()
 
@@ -69,7 +72,7 @@ export default function CheckoutPage() {
       console.error("Error placing order:", error)
       toast({
         title: "Error",
-        description: "There was an error placing your order. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error placing your order. Please try again.",
         variant: "destructive",
       })
     } finally {
