@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,10 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save, Upload } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { ArrowLeft, Save, Upload, X, Image as ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function AddProductPage() {
   const [formData, setFormData] = useState({
@@ -27,6 +27,10 @@ export default function AddProductPage() {
     is_new_arrival: false,
   })
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -45,23 +49,108 @@ export default function AddProductPage() {
     }))
   }
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a JPEG, PNG, WebP, or GIF image.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      setSelectedFile(file)
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+      setFormData(prev => ({ ...prev, image_url: "" })) // Clear URL input when file is selected
+    }
+  }
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", selectedFile)
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Upload failed")
+      }
+
+      const data = await response.json()
+      setFormData(prev => ({ ...prev, image_url: data.filePath }))
+      
+      toast({
+        title: "Image uploaded",
+        description: "Product image has been uploaded successfully.",
+      })
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload image.",
+        variant: "destructive",
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null)
+    setPreviewUrl("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.from("products").insert({
-        name: formData.name,
-        description: formData.description,
-        price: Number.parseFloat(formData.price),
-        image_url: formData.image_url || "/placeholder.svg?height=400&width=400",
-        category: formData.category,
-        stock_quantity: Number.parseInt(formData.stock_quantity),
-        is_featured: formData.is_featured,
-        is_new_arrival: formData.is_new_arrival,
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          price: formData.price,
+          image_url: formData.image_url || "/placeholder.svg?height=400&width=400",
+          category: formData.category,
+          stock_quantity: formData.stock_quantity,
+          is_featured: formData.is_featured,
+          is_new_arrival: formData.is_new_arrival,
+        }),
       })
 
-      if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
 
       toast({
         title: "Product created",
@@ -73,7 +162,7 @@ export default function AddProductPage() {
       console.error("Error creating product:", error)
       toast({
         title: "Error",
-        description: "Failed to create product. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create product. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -188,20 +277,94 @@ export default function AddProductPage() {
                 <CardTitle>Product Image</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* File Upload Section */}
                 <div>
-                  <Label htmlFor="image_url">Image URL</Label>
+                  <Label htmlFor="file">Upload Image</Label>
+                  <div className="mt-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      id="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <div className="flex items-center space-x-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center space-x-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>Choose File</span>
+                      </Button>
+                      {selectedFile && (
+                        <>
+                          <Button
+                            type="button"
+                            onClick={handleFileUpload}
+                            disabled={uploading}
+                            className="bg-primary-500 hover:bg-primary-600 text-white"
+                          >
+                            {uploading ? "Uploading..." : "Upload"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={removeSelectedFile}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    {selectedFile && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selected: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Image Preview */}
+                {(previewUrl || formData.image_url) && (
+                  <div className="border rounded-lg p-4">
+                    <Label className="text-sm text-gray-600 mb-2 block">Image Preview</Label>
+                    <div className="relative w-32 h-32">
+                      <Image
+                        src={previewUrl || formData.image_url}
+                        alt="Product preview"
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* URL Input (Alternative) */}
+                <div>
+                  <Label htmlFor="image_url">Or Enter Image URL</Label>
                   <Input
                     id="image_url"
                     name="image_url"
                     value={formData.image_url}
                     onChange={handleInputChange}
                     placeholder="https://example.com/image.jpg"
+                    disabled={!!selectedFile}
                   />
+                  {selectedFile && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Clear selected file to use URL input
+                    </p>
+                  )}
                 </div>
+
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">Upload product image</p>
-                  <p className="text-sm text-gray-500">Or enter image URL above</p>
+                  <p className="text-sm text-gray-500">Choose a file or enter image URL</p>
                 </div>
               </CardContent>
             </Card>
