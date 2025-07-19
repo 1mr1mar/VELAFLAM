@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Package, ShoppingCart, DollarSign, TrendingUp, Eye, Edit, Star } from "lucide-react"
+import { Package, ShoppingCart, DollarSign, TrendingUp, Eye, Edit, Star, Mail } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 
@@ -15,6 +15,7 @@ interface DashboardStats {
   pendingOrders: number
   totalReviews: number
   averageRating: number
+  totalMessages: number
 }
 
 interface Order {
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
     pendingOrders: 0,
     totalReviews: 0,
     averageRating: 0,
+    totalMessages: 0,
   })
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
@@ -68,14 +70,20 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      if (!supabase) {
+        console.error("Supabase client not configured")
+        return
+      }
+
       // Fetch stats
-      const [productsRes, ordersRes, revenueRes, pendingRes, reviewsRes, avgRatingRes] = await Promise.all([
+      const [productsRes, ordersRes, revenueRes, pendingRes, reviewsRes, avgRatingRes, messagesRes] = await Promise.all([
         supabase.from("products").select("id", { count: "exact" }),
         supabase.from("orders").select("id", { count: "exact" }),
         supabase.from("orders").select("total_amount"),
         supabase.from("orders").select("id", { count: "exact" }).eq("status", "pending"),
         supabase.from("reviews").select("id", { count: "exact" }),
         supabase.from("reviews").select("rating"),
+        supabase.from("contact_messages").select("id", { count: "exact" }),
       ])
 
       const totalRevenue = revenueRes.data?.reduce((sum, order) => sum + order.total_amount, 0) || 0
@@ -90,6 +98,7 @@ export default function AdminDashboard() {
         pendingOrders: pendingRes.count || 0,
         totalReviews: reviewsRes.count || 0,
         averageRating: Math.round(averageRating * 10) / 10,
+        totalMessages: messagesRes.count || 0,
       })
 
       // Fetch recent orders
@@ -228,6 +237,18 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-900">{stats.averageRating}★</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Messages</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalMessages}</p>
+              </div>
+              <Mail className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>

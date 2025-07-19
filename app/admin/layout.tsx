@@ -17,14 +17,17 @@ import {
   X,
   LogOut,
   UserCog,
+  Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getAdminUser, signOutAdmin } from "@/lib/admin-auth"
+import MessagesNotification from "@/components/messages-notification"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Messages", href: "/admin/messages", icon: Mail },
   { name: "Reviews", href: "/admin/reviews", icon: MessageSquare },
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Admin Users", href: "/admin/admin-users", icon: UserCog },
@@ -193,6 +196,7 @@ export default function AdminLayout({
               <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
+              <MessagesNotification />
               <Button asChild variant="outline" size="sm">
                 <Link href="/">View Store</Link>
               </Button>

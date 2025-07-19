@@ -72,7 +72,7 @@ export function HeroSection() {
           <div className="relative">
             <div className="relative z-10">
               <img
-                src="/placeholder.svg?height=600&width=500&text=Beautiful+Flame+Collection"
+                src="\images\hero.jpeg"
                 alt="Beautiful flame collection"
                 className="w-full h-auto rounded-2xl shadow-2xl"
               />
