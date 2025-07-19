@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import { join } from "path"
-import { existsSync } from "fs"
+import { createServerClient } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +14,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "text/plain"]
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed." },
+        { error: "Invalid file type. Only JPEG, PNG, WebP, GIF, and text files are allowed." },
         { status: 400 }
       )
     }
@@ -33,31 +31,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Initialize Supabase client
+    const supabase = createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      )
+    }
+
     // Create unique filename
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const fileExtension = file.name.split('.').pop()
     const fileName = `product-${timestamp}-${randomString}.${fileExtension}`
 
-    // Ensure images directory exists
-    const imagesDir = join(process.cwd(), "public", "images")
-    if (!existsSync(imagesDir)) {
-      await mkdir(imagesDir, { recursive: true })
-    }
-
-    // Save file to public/images directory
+    // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const filePath = join(imagesDir, fileName)
-    await writeFile(filePath, buffer)
 
-    // Return the file path relative to public directory
-    const relativePath = `/images/${fileName}`
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      console.error("Supabase storage error:", error)
+      return NextResponse.json(
+        { error: `Failed to upload file to storage: ${error.message}` },
+        { status: 500 }
+      )
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName)
 
     return NextResponse.json({
       success: true,
       fileName: fileName,
-      filePath: relativePath,
+      filePath: urlData.publicUrl,
       message: "File uploaded successfully"
     })
 

@@ -14,7 +14,41 @@ export const createServerClient = () => {
     return null
   }
 
-  return createClient(supabaseUrl, serviceRoleKey)
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
+// Client-side storage helper
+export const uploadImage = async (file: File) => {
+  if (!supabase) {
+    throw new Error("Supabase client not configured")
+  }
+
+  const timestamp = Date.now()
+  const randomString = Math.random().toString(36).substring(2, 15)
+  const fileExtension = file.name.split('.').pop()
+  const fileName = `product-${timestamp}-${randomString}.${fileExtension}`
+
+  const { data, error } = await supabase.storage
+    .from('product-images')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    })
+
+  if (error) {
+    throw error
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(fileName)
+
+  return urlData.publicUrl
 }
 
 // Helper function to check if Supabase is configured

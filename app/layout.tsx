@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "Flames Store - Premium Fire Effects & Decor",
   description: "Discover our collection of premium flames, candles, torches, and fire-themed decorative items.",
   keywords: "flames, candles, torches, fire decor, lighting, home decor",
-    generator: 'v0.dev'
+    generator: 'marwan.dev'
 }
 
 export default function RootLayout({

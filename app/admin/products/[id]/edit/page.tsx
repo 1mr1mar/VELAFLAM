@@ -189,24 +189,38 @@ export default function EditProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    // Validate form data
+    if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.stock_quantity) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setSaving(true)
 
     try {
+      const requestData = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        image_url: formData.image_url,
+        category: formData.category,
+        stock_quantity: formData.stock_quantity,
+        is_featured: formData.is_featured,
+        is_new_arrival: formData.is_new_arrival,
+      }
+
       const response = await fetch(`/api/products/${params.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          price: formData.price,
-          image_url: formData.image_url,
-          category: formData.category,
-          stock_quantity: formData.stock_quantity,
-          is_featured: formData.is_featured,
-          is_new_arrival: formData.is_new_arrival,
-        }),
+        body: JSON.stringify(requestData),
       })
 
       if (!response.ok) {
@@ -382,7 +396,11 @@ export default function EditProductPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          fileInputRef.current?.click()
+                        }}
                         className="flex items-center space-x-2"
                       >
                         <Upload className="h-4 w-4" />
@@ -392,7 +410,11 @@ export default function EditProductPage() {
                         <>
                           <Button
                             type="button"
-                            onClick={handleFileUpload}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleFileUpload()
+                            }}
                             disabled={uploading}
                             className="bg-primary-500 hover:bg-primary-600 text-white"
                           >
@@ -401,7 +423,11 @@ export default function EditProductPage() {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={removeSelectedFile}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              removeSelectedFile()
+                            }}
                             className="text-red-600 border-red-600 hover:bg-red-50"
                           >
                             <X className="h-4 w-4" />

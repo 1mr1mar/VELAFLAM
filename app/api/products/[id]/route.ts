@@ -56,6 +56,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("PUT request received for product ID:", params.id)
+    
     const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
@@ -68,23 +70,53 @@ export async function PUT(
     }
 
     const body = await request.json()
+    console.log("Request body:", JSON.stringify(body, null, 2))
+    
+    // Validate required fields
+    if (!body.name || !body.description || !body.price || !body.category || !body.stock_quantity) {
+      return NextResponse.json(
+        {
+          error: "Missing required fields",
+          product: null,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Parse numeric values safely
+    const price = Number.parseFloat(body.price)
+    const stockQuantity = Number.parseInt(body.stock_quantity)
+    
+    if (isNaN(price) || isNaN(stockQuantity)) {
+      return NextResponse.json(
+        {
+          error: "Invalid price or stock quantity",
+          product: null,
+        },
+        { status: 400 }
+      )
+    }
+
+    const updateData = {
+      name: body.name,
+      description: body.description,
+      price: price,
+      image_url: body.image_url || "/placeholder.svg?height=400&width=400",
+      category: body.category,
+      stock_quantity: stockQuantity,
+      is_featured: Boolean(body.is_featured),
+      is_new_arrival: Boolean(body.is_new_arrival),
+    }
+
     const { data, error } = await supabase
       .from("products")
-      .update({
-        name: body.name,
-        description: body.description,
-        price: Number.parseFloat(body.price),
-        image_url: body.image_url || "/placeholder.svg?height=400&width=400",
-        category: body.category,
-        stock_quantity: Number.parseInt(body.stock_quantity),
-        is_featured: body.is_featured,
-        is_new_arrival: body.is_new_arrival,
-      })
+      .update(updateData)
       .eq("id", params.id)
       .select()
       .single()
 
     if (error) {
+      console.error("Supabase error:", error)
       if (error.code === "PGRST116") {
         return NextResponse.json(
           {
@@ -94,7 +126,13 @@ export async function PUT(
           { status: 404 }
         )
       }
-      throw error
+      return NextResponse.json(
+        {
+          error: `Database error: ${error.message}`,
+          product: null,
+        },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json({
@@ -112,29 +150,40 @@ export async function PUT(
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Check if Supabase is configured
     const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
         {
-          error: "Database not configured. Please set up Supabase environment variables.",
+          error: "Database not configured",
         },
-        { status: 503 },
+        { status: 503 }
       )
     }
 
-    const { error } = await supabase.from("products").delete().eq("id", params.id)
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", params.id)
 
     if (error) {
       console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to delete product" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Failed to delete product" },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ message: "Product deleted successfully" })
   } catch (error) {
     console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
   }
-}
+} 
